@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>박규봉 잡기</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap">
 <style>
@@ -34,14 +39,14 @@
   .stat .value { font-family: "Press Start 2P", monospace; font-size: 16px; color: var(--accent); margin-top: 4px; }
   .stat .value.warn { color: var(--bad); }
   @media (max-width: 480px) {
-    header { margin-top: 5vh; flex-direction: column; align-items: stretch; gap: 10px; }
-    h1 { font-size: 13px; }
+    header { margin-top: 2vh; flex-direction: column; align-items: stretch; gap: 10px; }
+    h1 { font-size: 15px; }
     .stats { justify-content: space-between; }
     .stat { text-align: center; }
   }
 
   /* ---- 무대 가운데 화분: 박규봉이 화분 속에서 올라옴 ---- */
-  .stage { position: relative; z-index: 1; width: 100%; max-width: 440px; margin-top: 3vh; padding-top: calc(var(--sprite-h) * 0.5);
+  .stage { position: relative; z-index: 1; width: 100%; max-width: 540px; margin-top: 3vh; padding-top: calc(var(--sprite-h) * 0.5);
     display: grid; grid-template-columns: repeat(var(--pots, 3), 1fr); gap: clamp(24px, 5vh, 44px) clamp(24px, 6vw, 60px); align-items: end; justify-items: center; }
   .slot { position: relative; display: flex; flex-direction: column; align-items: center; }   /* z-index는 줄마다 JS에서 지정: 앞줄이 뒷줄 화분 위에 그려짐 */
   .hole { width: 100%; height: calc(var(--sprite-h) * (1 - var(--hidden)) * 0.6); clip-path: inset(-300% -100% 0 -100%); display: flex; justify-content: center; align-items: flex-end; margin-bottom: calc(var(--sprite-h) * var(--hidden) * -1); position: relative; z-index: 1; }
@@ -51,8 +56,8 @@
   .slot.hit .sprite { transform: translateY(105%); transition: transform .1s steps(2); }
   .slot.down .sprite { transition-duration: .1s; }
 
-  :root { --sprite-w: clamp(38px, 8.5vw, 56px); --sprite-h: calc(var(--sprite-w) * 16 / 7); --rim: clamp(8px, 1.8vw, 11px); --hidden: 0.36; }
-  .pot { position: relative; z-index: 2; pointer-events: none; width: 100%; max-width: 64px; display: flex; flex-direction: column; align-items: center; margin-bottom: 10px; }
+  :root { --sprite-w: clamp(50px, 12.5vw, 76px); --sprite-h: calc(var(--sprite-w) * 16 / 7); --rim: clamp(8px, 1.8vw, 11px); --hidden: 0.36; }
+  .pot { position: relative; z-index: 2; pointer-events: none; width: 100%; max-width: 92px; display: flex; flex-direction: column; align-items: center; margin-bottom: 10px; }
   .rim { width: 100%; height: var(--rim); background: #b5542a; box-shadow: inset 0 var(--px) 0 0 #e07a3e, inset 0 calc(var(--px) * -1) 0 0 #7a3416, 4px 4px 0 0 #000; }
   .body { width: 84%; aspect-ratio: 5 / 4; background: #c9682f; clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%);
     display: grid; place-items: center; background-image: linear-gradient(90deg, transparent 0 76%, #9c4620 76% 100%); }
@@ -78,7 +83,7 @@
   .panel .sub { font-size: 14px; color: var(--muted); }
   .legend { display: flex; gap: 20px; justify-content: center; align-items: center; margin: 6px 0 16px; }
   .legend div { display: flex; align-items: center; gap: 8px; font-size: 14px; }
-  .legend img { width: 22px; height: 48px; object-fit: contain; image-rendering: pixelated; }
+  .legend img { width: 28px; height: 62px; object-fit: contain; image-rendering: pixelated; }
   .row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
   input[type="text"] { font: inherit; font-size: 16px; padding: 10px 14px; border: var(--px) solid var(--line); background: #0a0714; color: var(--ink); min-width: 0; width: 200px; }
   input[type="text"]:focus-visible { outline: var(--px) solid var(--accent); outline-offset: 2px; }
@@ -99,6 +104,8 @@
   footer.credit b { color: var(--accent); font-weight: normal; }
   @media (prefers-reduced-motion: reduce) { .sprite, .pop, .flash { transition: none; animation: none; } .toast.on { animation-duration: .01s; } }
 </style>
+</head>
+<body>
 
 <!-- 스프라이트 정의: 박규봉(가운뎃손가락만 올린 손 + 손잡이), 함정(록 사인 손) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -477,6 +484,7 @@
       { sec: 10, interval: [650, 480], upTime: [900, 740],  maxUp: 2, decoyRate: 0.22 },
       { sec: 10, interval: [440, 320], upTime: [680, 520],  maxUp: 3, decoyRate: 0.28 },
     ],
+    stageHoldMs: 1300,        // 단계가 바뀔 때 안내 문구를 보여 주며 멈추는 시간(ms). 이 시간은 플레이 시간에서 빠지지 않음
     scoreEndpoint: "",        // 기록 서버 주소(선택). 비우면 이 기기에만 저장
   };
   const TOTAL_SEC = CONFIG.stages.reduce((a, s) => a + s.sec, 0);
@@ -484,7 +492,7 @@
   const $ = id => document.getElementById(id);
     let nickname = "", slots = [], running = false;
   let score = 0, hits = 0, misses = 0, decoyHits = 0, combo = 0, bestCombo = 0, shown = 0;
-  let startAt = 0, timers = [], stageIdx = 0;
+  let startAt = 0, timers = [], stageIdx = 0, paused = false, pausedAt = 0;
 
   // ========== 화분 만들기: 멤버 한 명당 하나 ==========
   // images/face-<id>.png 가 있으면 그 그림을, 없으면 픽셀 아이콘을 화분에 붙입니다.
@@ -538,7 +546,7 @@
   }
 
   function popOne() {
-    if (!running) return;
+    if (!running || paused) return;
     const { stage, local } = current();
     const free = slots.filter(s => !s.up);
     if (free.length && slots.length - free.length < stage.maxUp) {
@@ -557,12 +565,27 @@
     t.innerHTML = `${n}단계<small>${n === CONFIG.stages.length ? "마지막 · 전력 질주!" : "더 빨라집니다"}</small>`;
     t.classList.remove("on"); void t.offsetWidth; t.classList.add("on");
   }
-  function hide(s) {
+  function hide(s, silent) {
     clearTimeout(s.hideTimer);
     s.el.classList.add("down"); s.el.classList.remove("up"); s.up = false;
-    // 박규봉을 놓치면 콤보 끊김
-    if (s.type === "gyubong" && !s.el.classList.contains("hit")) { combo = 0; $("combo").textContent = 0; }
+    // 박규봉을 놓치면 콤보 끊김 (단계 전환으로 내릴 때는 유지)
+    if (!silent && s.type === "gyubong" && !s.el.classList.contains("hit")) { combo = 0; $("combo").textContent = 0; }
   }
+
+  // ========== 단계 전환 멈춤 ==========
+  function freeze() {                       // 등장을 멈추고 올라온 것은 내림. 콤보는 유지
+    if (paused) return;
+    paused = true; pausedAt = performance.now();
+    timers.forEach(clearTimeout); timers = [];
+    slots.forEach(s => { if (s.up) hide(s, true); });
+  }
+  function thaw() {                         // 멈춘 만큼 시작 시각을 밀어 남은 시간을 그대로 이어감
+    if (!paused) return;
+    startAt += performance.now() - pausedAt;
+    paused = false;
+    popOne(); tick();
+  }
+
 
   function whack(slotEl) {
     const s = slots.find(x => x.el === slotEl);
@@ -589,10 +612,14 @@
   }
 
   function tick() {
-    if (!running) return;
+    if (!running || paused) return;
     const left = Math.max(0, TOTAL_SEC - (performance.now() - startAt) / 1000);
     const { idx } = current();
-    if (idx !== stageIdx) { stageIdx = idx; showStage(idx + 1); }
+    if (idx !== stageIdx) {
+      stageIdx = idx; showStage(idx + 1); freeze();
+      setTimeout(thaw, CONFIG.stageHoldMs);
+      return;
+    }
     $("clock").textContent = left.toFixed(1);
     $("clock").classList.toggle("warn", left <= 5);
     if (left <= 0) return finish();
@@ -619,12 +646,12 @@
   function begin() {
     score = hits = misses = decoyHits = combo = bestCombo = shown = 0; stageIdx = 0;
     $("score").textContent = 0; $("combo").textContent = 0; $("stageNo").textContent = 1;
-    running = true; startAt = performance.now();
+    running = true; paused = false; startAt = performance.now();
     popOne(); tick();
   }
   async function finish() {
-    running = false;
-    timers.forEach(clearTimeout); slots.forEach(hide);
+    running = false; paused = false;
+    timers.forEach(clearTimeout); slots.forEach(s => hide(s, true));
     $("clock").textContent = "0.0";
     const accuracy = hits + misses + decoyHits ? Math.round(hits / (hits + misses + decoyHits) * 100) : 0;
     $("finalName").textContent = nickname;
@@ -664,3 +691,5 @@
 
   buildPots();
 </script>
+</body>
+</html>
